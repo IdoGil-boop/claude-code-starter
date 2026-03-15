@@ -1,0 +1,12 @@
+{
+  "name": "claude-code-starter",
+  "version": "1.0.0",
+  "description": "Reusable Claude Code setup: agents, skills, hooks, rules, instinct learning, /maintain workflow",
+  "author": "idogil",
+  "skills": [
+    "base/.claude/skills/*/SKILL.md"
+  ],
+  "agents": [
+    "base/.claude/agents/*.md"
+  ]
+}

@@ -1,0 +1,35 @@
+# claude-code-starter configuration
+# Copy to starter.config.yaml and customize for your project
+
+starter_repo: "https://github.com/idogil/claude-code-starter.git"
+starter_version: "v1.0.0"
+
+# Project identity
+project_name: "my-project"
+project_description: "Short description of your project"
+tech_stack: "Python + FastAPI + PostgreSQL + Next.js"
+
+# Directory structure (relative to project root)
+backend_dir: "backend"
+frontend_dir: "frontend"
+source_dir: "backend/app"
+test_dir: "backend/tests"
+migration_dir: "backend/alembic/versions"
+
+# Tool commands
+test_cmd: "pytest"
+lint_cmd: "ruff check"
+type_check_cmd: "mypy"
+security_cmd: "bandit -r"
+coverage_cmd: "pytest --cov=app --cov-report=term-missing"
+frontend_type_check_cmd: "npx tsc --noEmit"
+coverage_threshold: 80
+
+# Packs to install (optional language/stack extensions)
+packs:
+  - python
+  - postgres
+  - nextjs
+
+# cc10x integration (task orchestration workflows)
+enable_cc10x: true
