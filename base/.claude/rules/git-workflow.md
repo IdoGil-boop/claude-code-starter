@@ -46,7 +46,14 @@ When creating PRs:
 - Fix MEDIUM issues when possible
 - Run linters: `{{LINT_CMD}}`, `{{TYPE_CHECK_CMD}}`
 
-### 4. Commit & Push
+### 4. Pattern Sweep Before Commit
+After fixing ANY bug or PR review comment, **grep the entire codebase** for the same pattern before committing:
+- Identify the pattern (e.g., `x or default` where `x=0` is valid, missing auth check, incorrect API usage)
+- Search broadly across all relevant file types (backend + frontend)
+- Fix ALL instances of the same pattern in the same commit — never fix just one
+- A reviewer finding the same bug in a different file on the next round is a wasted cycle
+
+### 5. Commit & Push
 - Detailed commit messages following conventional format
 - One logical change per commit
 - Include migrations with model changes
