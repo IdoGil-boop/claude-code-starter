@@ -47,14 +47,8 @@ if [[ ! -f "starter.config.yaml" ]]; then
   info "No config found — running auto-detection..."
   "$STARTER_DIR/install.sh" --init
 
-  # install.sh --init with no config creates the config and stops.
-  # If it also installed (config already existed from a prior run), we're done.
-  if [[ -d ".claude" ]]; then
-    ok "Setup complete!"
-    exit 0
-  fi
-
-  # Auto-detect created the config but paused for review
+  # install.sh auto-detect creates config and exits. Now we need to
+  # optionally let the user review it, then proceed to the actual install.
   if [[ -f "starter.config.yaml" ]]; then
     if [[ "${SKIP_EDIT:-0}" == "1" ]]; then
       info "SKIP_EDIT=1 — using auto-detected config as-is"
