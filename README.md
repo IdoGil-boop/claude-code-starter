@@ -4,22 +4,35 @@ Reusable Claude Code setup kit: agents, skills, hooks, rules, commands, contexts
 
 Import into any project. Keep in sync via `install.sh`.
 
-## Quick Start
+## Quick Start (One Command)
 
 ```bash
 # In your project root:
-git clone --depth 1 https://github.com/IdoGil-boop/claude-code-starter.git .claude-starter
+bash <(curl -fsSL https://raw.githubusercontent.com/IdoGil-boop/claude-code-starter/main/setup.sh)
+```
 
-# Copy and edit config:
+Auto-detects your stack, creates config, installs everything, updates `.gitignore`. Done.
+
+Options via env vars:
+```bash
+# Skip the config review pause (use auto-detected defaults):
+SKIP_EDIT=1 bash <(curl -fsSL https://raw.githubusercontent.com/IdoGil-boop/claude-code-starter/main/setup.sh)
+
+# Override project name:
+PROJECT_NAME=my-app bash <(curl -fsSL https://raw.githubusercontent.com/IdoGil-boop/claude-code-starter/main/setup.sh)
+```
+
+<details>
+<summary>Manual setup (4 steps)</summary>
+
+```bash
+git clone --depth 1 https://github.com/IdoGil-boop/claude-code-starter.git .claude-starter
 cp .claude-starter/starter.config.yaml.example starter.config.yaml
 # Edit starter.config.yaml with your project details
-
-# Install:
 .claude-starter/install.sh
-
-# Add to .gitignore:
 echo ".claude-starter/" >> .gitignore
 ```
+</details>
 
 ## Commands
 
@@ -90,6 +103,14 @@ CLAUDE.md (≤120 lines)         ← Index + overview. Never inline details.
   ├── docs/guides/*.md          ← How-to guides
   └── docs/plans/*.md           ← Implementation plans
 ```
+
+## Upstream Sync — Push Learnings Back
+
+When you discover a universal gotcha or improve a rule/skill/agent in a project, push it back to the starter so all projects benefit:
+
+The `upstream-sync` skill guides Claude through this — it edits files in `.claude-starter/`, commits, and pushes to origin. Then re-syncs the local project.
+
+Only universal learnings go upstream. Project-specific content stays in `-local` files.
 
 ## Updating
 
