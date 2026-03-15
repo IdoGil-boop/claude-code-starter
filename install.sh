@@ -184,7 +184,7 @@ auto_detect_stack() {
 
   cat > "$CONFIG_FILE" << YAML
 # claude-code-starter configuration (auto-detected)
-starter_repo: "https://github.com/idogil/claude-code-starter.git"
+starter_repo: "https://github.com/IdoGil-boop/claude-code-starter.git"
 starter_version: "v1.0.0"
 
 project_name: "$project_name"

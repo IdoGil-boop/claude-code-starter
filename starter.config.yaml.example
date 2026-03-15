@@ -1,7 +1,7 @@
 # claude-code-starter configuration
 # Copy to starter.config.yaml and customize for your project
 
-starter_repo: "https://github.com/idogil/claude-code-starter.git"
+starter_repo: "https://github.com/IdoGil-boop/claude-code-starter.git"
 starter_version: "v1.0.0"
 
 # Project identity

@@ -8,7 +8,7 @@ Import into any project. Keep in sync via `install.sh`.
 
 ```bash
 # In your project root:
-git clone --depth 1 https://github.com/idogil/claude-code-starter.git .claude-starter
+git clone --depth 1 https://github.com/IdoGil-boop/claude-code-starter.git .claude-starter
 
 # Copy and edit config:
 cp .claude-starter/starter.config.yaml.example starter.config.yaml
