@@ -172,9 +172,11 @@ auto_detect_stack() {
   [[ -z "$detected_stack" ]] && detected_stack="General"
 
   local packs_yaml=""
-  for pack in "${detected_packs[@]}"; do
-    packs_yaml="$packs_yaml\n  - $pack"
-  done
+  if [[ ${#detected_packs[@]} -gt 0 ]]; then
+    for pack in "${detected_packs[@]}"; do
+      packs_yaml="$packs_yaml\n  - $pack"
+    done
+  fi
 
   local project_name
   project_name="$(basename "$PROJECT_DIR")"
