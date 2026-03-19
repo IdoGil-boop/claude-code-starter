@@ -469,6 +469,12 @@ case "$MODE" in
     do_diff
     ;;
   init|sync)
+    # Auto-pull latest starter before install/sync
+    if git -C "$STARTER_DIR" rev-parse --is-inside-work-tree &>/dev/null; then
+      log_info "Pulling latest starter..."
+      git -C "$STARTER_DIR" pull --rebase --quiet origin main 2>/dev/null || log_warn "Could not pull starter (offline?), using local copy"
+    fi
+
     load_config
     log_info "Running --${MODE} for $PROJECT_NAME ($TECH_STACK)"
     echo ""
