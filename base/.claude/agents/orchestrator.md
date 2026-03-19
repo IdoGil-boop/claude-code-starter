@@ -23,6 +23,7 @@ Overview of custom agents available in this repository.
 | **security-reviewer** | `.claude/agents/security-reviewer.md` | Auth changes, input handling, secrets management |
 | **refactor-cleaner** | `.claude/agents/refactor-cleaner.md` | Dead code cleanup, duplicate consolidation |
 | **post-session-maintainer** | `.claude/agents/post-session-maintainer.md` | End of session: docs, skills, memory, recommendations |
+| **mobile-auditor** | `.claude/agents/mobile-auditor.md` | Mobile compatibility audit: touch targets, responsive layout, forms, tables |
 
 ## Available Skills
 

@@ -17,4 +17,5 @@
 | **coding-standards** | Universal quality checklist | Before committing |
 | **repo-explorer** | Map repository structure | New codebase exploration |
 | **cc10x-codex-patch** | Re-apply cc10x router patches | After cc10x update |
+| **mobile-audit** | Mobile compatibility audit on frontend pages | Before release, after UI changes |
 | **upstream-sync** | Push universal learnings back to starter repo | Gotcha/rule/skill discovered that applies to all projects |

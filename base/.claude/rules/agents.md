@@ -14,6 +14,7 @@ Located in `.claude/agents/`:
 | **security-reviewer** | Security analysis | Auth changes, input handling, secrets management |
 | **refactor-cleaner** | Dead code cleanup | Post-migration cleanup, removing competing logic |
 | **post-session-maintainer** | Session capture | End-of-session: captures learnings |
+| **mobile-auditor** | Mobile UX audit | Before release, after frontend changes, UI redesign |
 | **orchestrator** | Agent routing | Lists agents and recommends which to use |
 
 ## Immediate Agent Usage (No User Prompt Needed)
