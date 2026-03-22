@@ -15,6 +15,8 @@ Located in `.claude/agents/`:
 | **refactor-cleaner** | Dead code cleanup | Post-migration cleanup, removing competing logic |
 | **post-session-maintainer** | Session capture | End-of-session: captures learnings |
 | **mobile-auditor** | Mobile UX audit | Before release, after frontend changes, UI redesign |
+| **ux-ui-advisor** | UX/UI review (CandleKeep-backed) | Frontend/UI changes; consults design reference books |
+| **security-privacy-advisor** | Security & privacy review (CandleKeep-backed) | Auth, crypto, data handling changes; consults security books |
 | **orchestrator** | Agent routing | Lists agents and recommends which to use |
 
 ## Immediate Agent Usage (No User Prompt Needed)
@@ -24,7 +26,8 @@ Trigger agents automatically in these situations:
 2. **Code just written/modified** — Use **code-reviewer**
 3. **Bug fix or new feature** — Use **tdd-guide** to enforce write-tests-first
 4. **Architectural decision** — Use **architect** for schema/system changes
-5. **Security-sensitive changes** — Use **security-reviewer**
+5. **Security-sensitive changes** — Use **security-reviewer** or **security-privacy-advisor** (CandleKeep-backed)
+6. **Frontend/UI changes** — Use **ux-ui-advisor** for design principle review (CandleKeep-backed)
 
 ## Parallel Task Execution
 
