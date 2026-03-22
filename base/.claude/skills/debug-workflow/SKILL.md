@@ -17,6 +17,56 @@ Structured debugging methodology enforced through task dependencies, Router Cont
 
 ---
 
+## The Iron Law
+
+```
+NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST.
+FIX THE ROOT CAUSE, NOT THE SYMPTOM.
+```
+
+**Never fix solely where errors appear — trace to the original trigger.** The place where a bug manifests (crash, wrong output, test failure) is almost never where the bug lives. Trace the call chain upward until you find the **original trigger** — the code that first introduced the invalid state.
+
+A fix that patches the symptom location is a **cosmetic fix**. It will:
+- Break in a different way when inputs change
+- Leave sibling bugs untouched (BUGSTONE sweep finds nothing because the pattern was never fixed)
+- Require another fix when the same root cause surfaces elsewhere
+
+### Red Flags — STOP and Return to Root Cause
+
+If you catch yourself thinking any of these, **STOP immediately** and return to Phase 3:
+
+- "Quick fix for now, investigate later"
+- "Just try changing X and see if it works"
+- "I see the problem, let me fix it" *(seeing symptoms ≠ understanding root cause)*
+- "It's probably X, let me fix that" *(probably ≠ evidence)*
+- "I don't fully understand but this might work"
+- "One more fix attempt" *(after 2+ failed fixes)*
+- Proposing solutions before tracing data flow
+
+### Rationalization Prevention
+
+| Excuse | Reality |
+|--------|---------|
+| "Issue is simple, don't need full process" | Simple issues have root causes too |
+| "Emergency, no time for root cause" | Systematic debugging is FASTER than guess-and-check |
+| "I see the problem, let me fix it" | Seeing symptoms ≠ understanding root cause |
+| "One more fix attempt" (after 2+ failures) | 3+ failures = architectural problem, not a bug |
+| "The fix works but I don't know why" | This isn't fixed, this is luck |
+
+### 3-Fix Cap — Question Architecture
+
+If 3+ fixes have been attempted and none resolved the issue:
+
+1. **STOP** — do not attempt fix #4
+2. **Question fundamentals**: Is the pattern/architecture sound?
+3. **AskUserQuestion**: "3+ fixes failed. This suggests an architectural issue, not a simple bug. How to proceed?"
+   - "Question architecture (Recommended)"
+   - "Research externally"
+   - "Continue with new hypothesis"
+   - "Abort"
+
+---
+
 ## Task DAG (Dependency Graph)
 
 Create all tasks at workflow start. Downstream tasks are **physically blocked** until their dependencies complete.
@@ -269,31 +319,75 @@ STATUS=ISOLATED but FILES_IDENTIFIED is empty
 **Task**: `root_cause_task`
 **Blocked by**: `[isolate_task]`
 
-Work backward from where the problem manifests.
+Work backward from where the problem manifests. **Trace to the original trigger, not the symptom location.**
 
 - Reconstruct context: request parameters, system state, execution timing
 - Apply **5 Whys**: ask "why" iteratively to drill past symptoms
+- **Root Cause Tracing**: follow the call chain upward from where the error manifests until you find where invalid state was first introduced
+  ```
+  1. Where does error manifest? (symptom location)
+  2. What called this with bad data?
+  3. Keep tracing up — follow invalid data backward
+  4. Find original trigger — where did problem actually START?
+  5. THAT is the root cause. Fix THERE, not at the symptom.
+  ```
 - Add targeted logging if needed (iterative logging loop)
 - Do NOT proceed until root cause is clear
+
+### Hypothesis Confidence Scoring
+
+Track 2-3 hypotheses with confidence levels. **Never proceed to fix until one reaches 80+.**
+
+```
+H1: [hypothesis] — Confidence: [0-100]
+    Evidence for: [what supports this]
+    Evidence against: [what contradicts this]
+    Next test: [what would raise or lower confidence]
+
+H2: [hypothesis] — Confidence: [0-100]
+    ...
+```
+
+| Range | Meaning | Action |
+|-------|---------|--------|
+| 80-100 | Strong evidence | Proceed to fix |
+| 50-79 | Needs more data | Run "Next test" |
+| 0-49 | Speculation | Deprioritize or discard |
 
 ### Router Contract (Phase 3)
 ```yaml
 PHASE: 3-root-cause
 STATUS: IDENTIFIED|NEEDS_MORE_INVESTIGATION
 ROOT_CAUSE: "<clear statement of WHY, not just WHERE>"
+ROOT_CAUSE_LOCATION: "<file:line where the bug ORIGINATES, not where it manifests>"
+SYMPTOM_LOCATION: "<file:line where the error is OBSERVED>"
 FIVE_WHYS_CHAIN: "<the chain you followed>"
-CONFIDENCE: HIGH|MEDIUM|LOW
+CONFIDENCE: <0-100>
+HYPOTHESES_TRACKED: <count — must be ≥2>
+FIX_TARGET: "ROOT_CAUSE|SYMPTOM"
 ```
 
 ### CONTRACT RULE
 ```
-STATUS=IDENTIFIED but CONFIDENCE=LOW
+STATUS=IDENTIFIED but CONFIDENCE<80
   → Override: STATUS=NEEDS_MORE_INVESTIGATION, BLOCKING=true,
-    REMEDIATION_REASON="Low confidence root cause — add more logging and repeat"
+    REMEDIATION_REASON="Confidence below 80 — gather more evidence before fixing"
 
 STATUS=IDENTIFIED but ROOT_CAUSE is empty
   → Override: STATUS=FAIL, BLOCKING=true,
     REMEDIATION_REASON="Must state root cause clearly"
+
+STATUS=IDENTIFIED but FIX_TARGET=SYMPTOM
+  → Override: STATUS=FAIL, BLOCKING=true,
+    REMEDIATION_REASON="Fix targets symptom location, not root cause. Trace the call chain upward to the original trigger."
+
+STATUS=IDENTIFIED but ROOT_CAUSE_LOCATION=SYMPTOM_LOCATION
+  → WARNING (not blocking): Verify this is genuinely the same location.
+    If the root cause truly originates where the symptom appears, document why.
+
+STATUS=IDENTIFIED but HYPOTHESES_TRACKED<2
+  → Override: STATUS=FAIL, BLOCKING=true,
+    REMEDIATION_REASON="Must track at least 2 hypotheses to avoid confirmation bias"
 ```
 
 **Memory update**: Log `[DEBUG-3]: Root cause: {root_cause} (5 Whys: {chain})` to activeContext.md `## Recent Changes`. Also persist as a Decision: `Debug [{date}]: Root cause identified — {root_cause}`
@@ -382,11 +476,28 @@ STATUS=APPROACH_CHOSEN but CANDIDATES_CONSIDERED<2
 **Task**: `fix_task`
 **Blocked by**: `[hypothesize_task]`
 
-Apply the chosen fix.
+Apply the chosen fix **at the root cause location, not the symptom location**.
 
 - Make the minimal change that addresses root cause
 - Follow existing code patterns and style
 - The parallel `debug-test-writer` agent is writing regression tests concurrently
+- **The fix must change code at or upstream of ROOT_CAUSE_LOCATION from Phase 3**
+- If the fix only touches SYMPTOM_LOCATION, it's a cosmetic fix — go back
+
+### Anti-Hardcode Gate (REQUIRED before implementing)
+
+Before writing the fix, check whether the bug depends on **variants**:
+
+| Variant Dimension | Example |
+|-------------------|---------|
+| Locale/i18n | Language, RTL/LTR, number formatting |
+| Configuration/environment | Feature flags, env vars, build modes |
+| Roles/permissions | Admin vs user, auth vs unauth |
+| Data shape | Missing fields, empty lists, null values, ordering |
+| Platform/runtime | Browser, OS, Node version |
+| Concurrency/ordering | Races, retries, eventual consistency |
+
+If variants apply, the fix MUST be **general** — it must work across all relevant variant dimensions, not just the one reproduction case. The regression test (from the parallel test writer) MUST cover at least one **non-default** variant.
 
 ### Router Contract (Phase 5)
 ```yaml
@@ -395,6 +506,11 @@ STATUS: APPLIED
 FILES_CHANGED: ["<path1>", "<path2>"]
 CHANGE_SUMMARY: "<what was changed and why>"
 LINES_CHANGED: <count>
+FIX_LOCATION: "<file:line where the fix was applied>"
+ROOT_CAUSE_LOCATION: "<file:line from Phase 3 — must match or be upstream>"
+VARIANTS_CHECKED: true|false
+VARIANTS_APPLICABLE: ["<dimension1>", "<dimension2>"] or []
+HARDCODED: true|false
 ```
 
 ### CONTRACT RULE
@@ -402,6 +518,18 @@ LINES_CHANGED: <count>
 STATUS=APPLIED but FILES_CHANGED is empty
   → Override: STATUS=FAIL, BLOCKING=true,
     REMEDIATION_REASON="No files were changed — fix not applied"
+
+STATUS=APPLIED but FIX_LOCATION does not match or precede ROOT_CAUSE_LOCATION
+  → Override: STATUS=FAIL, BLOCKING=true,
+    REMEDIATION_REASON="Fix applied at symptom location, not root cause. Trace upward and fix where the bug originates."
+
+STATUS=APPLIED but VARIANTS_CHECKED≠true
+  → Override: STATUS=FAIL, BLOCKING=true,
+    REMEDIATION_REASON="Anti-Hardcode Gate not completed. Check variant dimensions before fixing."
+
+STATUS=APPLIED but HARDCODED=true
+  → Override: STATUS=FAIL, BLOCKING=true,
+    REMEDIATION_REASON="Fix is hardcoded to one case. Must be general across applicable variants."
 ```
 
 **Memory update**: Log `[DEBUG-5]: Fix applied to {files} — {change_summary}` to activeContext.md `## Recent Changes`
@@ -604,10 +732,10 @@ STATUS=DOCUMENTED but HISTORY_UPDATED≠true
 | 0 | Knowledge Search | — | GOTCHAS_CHECKED, HISTORY_CHECKED | No |
 | 1 | Reproduce | Phase 0 | STATUS=REPRODUCED, REPRODUCTION_COMMAND | AskUser if not reproducible |
 | 2 | Isolate | Phase 1 | FILES_IDENTIFIED, FUNCTIONS_IDENTIFIED | No |
-| 3 | Root Cause | Phase 2 | ROOT_CAUSE, CONFIDENCE≥MEDIUM | No |
+| 3 | Root Cause | Phase 2 | ROOT_CAUSE, CONFIDENCE≥80, FIX_TARGET=ROOT_CAUSE, HYPOTHESES≥2 | No |
 | 3b | Test Writer | Phase 3 | TDD_RED_EXIT≠0 (background) | No |
 | 4 | Hypothesize | Phase 3 | CANDIDATES_CONSIDERED≥2 | No |
-| 5 | Fix | Phase 4 | FILES_CHANGED | No |
+| 5 | Fix | Phase 4 | FILES_CHANGED, FIX_LOCATION=ROOT_CAUSE, HARDCODED=false | No |
 | 5b | Pattern Sweep | Phase 5 | PATTERN_SEARCHED, SIBLINGS | No |
 | 6 | Verify | Phase 5b + 3b | TDD_GREEN_EXIT=0, RED_GREEN=true | Yes (REM-FIX + circuit breaker) |
 | 7 | Document | Phase 6 | HISTORY_UPDATED=true | No |

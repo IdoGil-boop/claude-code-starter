@@ -54,7 +54,20 @@ Run the tests to confirm they fail:
 - Rewrite until they genuinely fail on the buggy code
 - A passing test before the fix means you're testing the wrong thing
 
-### Step 4: Add Edge Case Tests
+### Step 4: Anti-Hardcode — Variant Coverage
+
+Before writing edge case tests, check if the bug depends on **variants**:
+- Locale/i18n, roles/permissions, data shape, platform, configuration, concurrency
+
+If variants apply, add at least one test using a **non-default** variant:
+```
+test_parser_null_input_regression          ← default case
+test_parser_null_input_rtl_locale          ← non-default variant
+```
+
+This prevents fixes that only work for the reproduction case but break for other inputs.
+
+### Step 5: Add Edge Case Tests
 
 Beyond the exact reproduction, add tests for:
 - Boundary values related to the bug
@@ -69,6 +82,7 @@ REGRESSION TESTS READY
 ─────────────────────
 Test file: <path>
 Tests written: <count>
+Variant coverage: <count> non-default variants tested (or "N/A — no variants apply")
 Status: ALL FAILING (RED) — ready for fix to turn green
 Tests:
   - test_name_1: <what it verifies>
