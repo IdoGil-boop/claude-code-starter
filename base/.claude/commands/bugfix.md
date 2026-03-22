@@ -1,64 +1,62 @@
 <!-- managed by claude-code-starter -->
 ---
-description: Structured debugging workflow with pattern sweep and knowledge tracking
+description: Structured debugging workflow with cc10x-compatible task DAG enforcement
 ---
 
 # Bugfix
 
 Launch the structured debug workflow for a bug or issue.
 
-> **NEVER skip phases. Every gate must be printed before proceeding to the next phase.**
-> Even if the fix seems obvious, follow the full workflow — obvious fixes that skip reproduction are the #1 source of regressions.
+> **ENFORCEMENT**: This workflow uses task dependencies (`addBlockedBy`) to prevent step skipping.
+> Downstream tasks are physically blocked until upstream tasks complete.
+> Each phase outputs a Router Contract YAML that is validated by CONTRACT RULEs.
+> Failures trigger self-healing (REM-FIX tasks) with a circuit breaker at 3 active attempts.
 
-## Workflow (all steps mandatory)
+## Step 1: Create Task DAG
 
-1. **GATE 0 — Search existing knowledge** (MANDATORY):
-   - Read `docs/gotchas.md` for known gotchas matching this symptom
-   - Read `docs/debug-history.md` for previously fixed similar bugs
-   - Search instincts for debugging domain matches
-   - Print ✅ GATE 0 before proceeding
+Create ALL tasks upfront with dependencies. This is the structural enforcement — no phase can run out of order.
 
-2. **GATE 1 — Reproduce** (MANDATORY):
-   - Actually trigger the bug and observe the failure
-   - Print ✅ GATE 1 with reproduction steps and observed error
+```
+knowledge_search → reproduce → isolate → root_cause → hypothesize → fix → pattern_sweep ─┐
+                                                    └→ test_writer (background) ───────────┤
+                                                                                           → verify → document
+```
 
-3. **GATE 2 — Isolate** (MANDATORY):
-   - Narrow to specific files and functions
-   - Print ✅ GATE 2 with location
+## Step 2: Execute Chain
 
-4. **GATE 3 — Root Cause** (MANDATORY):
-   - Apply 5 Whys to find the actual root cause
-   - Print ✅ GATE 3 with root cause statement
+For each task in dependency order:
 
-5. **GATE 3b — Spawn test writer** (MANDATORY):
-   - Spawn `debug-test-writer` agent **in background** with symptom, root cause, affected code, and reproduction steps
-   - Print ✅ GATE 3b with agent ID
+1. **Check runnable**: `TaskList()` → find tasks where status=pending AND all blockedBy are completed
+2. **Set in_progress**: `TaskUpdate(task, status: "in_progress")`
+3. **Execute phase**: Follow the phase instructions from the `debug-workflow` skill
+4. **Output Router Contract**: Print the structured YAML contract for this phase
+5. **Validate CONTRACT RULE**: Check contract outputs against rules. If violated → override STATUS to FAIL
+6. **If PASS**: `TaskUpdate(task, status: "completed")` → next task unblocks
+7. **If FAIL + self-healing applies**: Create REM-FIX task, block current task, resolve, then re-execute
 
-6. **GATE 4 — Hypothesize** (MANDATORY):
-   - Propose and evaluate candidate fixes
-   - Print ✅ GATE 4 with chosen approach
+## Step 3: Parallel Execution
 
-7. **GATE 5 — Fix** (MANDATORY):
-   - Apply the minimal fix
-   - Print ✅ GATE 5 with files changed
+After Phase 3 (root cause), two tasks unblock simultaneously:
+- `test_writer_task` → spawns `debug-test-writer` agent **in background**
+- `hypothesize_task` → continues in main context
 
-8. **GATE 5b — Pattern sweep** (MANDATORY):
-   - Extract bug pattern and grep the entire codebase for siblings
-   - Fix ALL instances in the same pass
-   - Print ✅ GATE 5b with search terms and siblings found
+Phase 6 (verify) is blocked by BOTH — it waits for the fix AND the parallel tests.
 
-9. **GATE 6 — Verify** (MANDATORY):
-   - Collect parallel test writer results
-   - Run regression tests — must turn RED→GREEN
-   - Run full test suite: `{{TEST_CMD}}`
-   - Run linter: `{{LINT_CMD}}`
-   - Confirm original reproduction no longer triggers the bug
-   - Print ✅ GATE 6 with all results
+## Step 4: Self-Healing (Phase 6)
 
-10. **GATE 7 — Document** (MANDATORY):
-    - Add gotcha to `docs/gotchas.md` if the bug was counter-intuitive
-    - **Always** append entry to `docs/debug-history.md` with root cause and fix
-    - Consider creating a debugging instinct if pattern is likely to recur
-    - Print ✅ GATE 7 confirming all docs updated
+If verification fails:
+1. Create `REM-FIX` task describing what failed
+2. Block `verify_task` on `REM-FIX` task
+3. Fix the issue
+4. Mark `REM-FIX` complete → `verify_task` unblocks → re-verify
+5. **Circuit breaker**: If 3+ active REM-FIX tasks → `AskUserQuestion` to user
 
-> **The bugfix is NOT complete until all 10 gates are printed and passing.**
+## Step 5: Document (MANDATORY — inline, never delegated)
+
+After verification passes:
+- **Always** append to `docs/debug-history.md`
+- Add gotcha to `docs/gotchas.md` if bug was counter-intuitive
+- Consider creating debugging instinct
+
+> **The workflow is complete when `document_task` reaches status `completed`.**
+> The DAG guarantees every prior phase completed successfully.
