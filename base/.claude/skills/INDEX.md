@@ -16,7 +16,8 @@
 | **tdd-workflow** | Test-driven development workflow | New features, bug fixes |
 | **coding-standards** | Universal quality checklist | Before committing |
 | **repo-explorer** | Map repository structure | New codebase exploration |
-| **cc10x-codex-patch** | Re-apply cc10x router patches | After cc10x update |
+| **cc10x-codex-patch** | Re-apply cc10x codex-review patch | After cc10x update |
+| **cc10x-mobile-audit-patch** | Re-apply cc10x conditional agent patches (mobile/ux/security) | After cc10x update |
 | **mobile-audit** | Mobile compatibility audit on frontend pages | Before release, after UI changes |
 | **debug-workflow** | Structured debugging with pattern sweep and knowledge tracking | `/bugfix`, bug reports, error investigation |
 | **upstream-sync** | Push universal learnings back to starter repo | Gotcha/rule/skill discovered that applies to all projects |
