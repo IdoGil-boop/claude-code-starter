@@ -7,7 +7,11 @@ Known pitfalls and workarounds. Add new entries as they're discovered.
 <!-- Add database-specific gotchas as they're discovered -->
 
 ## Infrastructure
-<!-- Add deployment/Docker/CI gotchas here -->
+
+### Agent Workflow Diff Gates See Empty Diffs After Commit
+**Symptom**: Conditional agents in multi-step workflows (e.g., mobile-auditor, security-reviewer) always skip because they detect no changed files.
+**Cause**: The builder step commits changes before conditional agents run. `git diff --name-only HEAD` compares the working tree to the last commit — but since changes were just committed, the working tree is clean and the diff is empty.
+**Fix**: Use `git diff --name-only HEAD~1 HEAD` instead. This compares the last commit against its parent, showing exactly what the builder step changed.
 
 ## Frontend
 <!-- Add UI/React/build gotchas here -->
