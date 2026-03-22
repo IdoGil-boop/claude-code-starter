@@ -2,7 +2,7 @@
 # Project Gotchas
 
 Valid constructs that work as documented but are counter-intuitive and invite mistakes.
-Updated by the `/debug` workflow whenever a non-obvious bug is found.
+Updated by the `/bugfix` workflow whenever a non-obvious bug is found.
 
 > **Search this file before debugging** — the bug you're chasing may already be documented here.
 

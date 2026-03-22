@@ -1,7 +1,7 @@
 <!-- managed by claude-code-starter -->
 ---
 name: debug-test-writer
-description: Parallel agent spawned during /debug. Writes regression tests that capture the bug BEFORE the fix lands, so the fix turns them green. Receives bug context (symptom, root cause, affected code) and produces failing tests.
+description: Parallel agent spawned during /bugfix. Writes regression tests that capture the bug BEFORE the fix lands, so the fix turns them green. Receives bug context (symptom, root cause, affected code) and produces failing tests.
 tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
 model: sonnet
 ---

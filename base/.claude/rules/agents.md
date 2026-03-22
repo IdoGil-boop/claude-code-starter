@@ -17,7 +17,7 @@ Located in `.claude/agents/`:
 | **mobile-auditor** | Mobile UX audit | Before release, after frontend changes, UI redesign |
 | **ux-ui-advisor** | UX/UI review (CandleKeep-backed) | Frontend/UI changes; consults design reference books |
 | **security-privacy-advisor** | Security & privacy review (CandleKeep-backed) | Auth, crypto, data handling changes; consults security books |
-| **debug-test-writer** | Parallel regression tests during debugging | Auto-spawned by `/debug` at Phase 3b |
+| **debug-test-writer** | Parallel regression tests during debugging | Auto-spawned by `/bugfix` at Phase 3b |
 | **orchestrator** | Agent routing | Lists agents and recommends which to use |
 
 ## Immediate Agent Usage (No User Prompt Needed)

@@ -2,7 +2,7 @@
 # Debug History
 
 Chronological log of bugs investigated and fixed.
-Updated by the `/debug` workflow after each fix.
+Updated by the `/bugfix` workflow after each fix.
 
 > **Search this file before debugging** — a similar bug may have been fixed before.
 

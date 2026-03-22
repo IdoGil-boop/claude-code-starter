@@ -18,5 +18,5 @@
 | **repo-explorer** | Map repository structure | New codebase exploration |
 | **cc10x-codex-patch** | Re-apply cc10x router patches | After cc10x update |
 | **mobile-audit** | Mobile compatibility audit on frontend pages | Before release, after UI changes |
-| **debug-workflow** | Structured debugging with pattern sweep and knowledge tracking | `/debug`, bug reports, error investigation |
+| **debug-workflow** | Structured debugging with pattern sweep and knowledge tracking | `/bugfix`, bug reports, error investigation |
 | **upstream-sync** | Push universal learnings back to starter repo | Gotcha/rule/skill discovered that applies to all projects |
