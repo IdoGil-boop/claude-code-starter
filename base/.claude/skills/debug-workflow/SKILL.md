@@ -9,39 +9,71 @@ user_invocable: true
 
 Structured debugging methodology that finds root causes, sweeps for sibling bugs, and builds project-level knowledge.
 
-## Before You Start
+> **MANDATORY: Every phase must be completed in order. NEVER skip a phase.**
+> After completing each phase, print the phase gate checkpoint (shown at the end of each phase) before proceeding.
+> If you are tempted to jump ahead because the fix "seems obvious" — STOP. Obvious fixes that skip reproduction and root cause analysis are the #1 source of regressions.
 
-**Search existing knowledge first** — before diving into code:
+---
+
+## Phase 0: Search Existing Knowledge
+
+**MANDATORY — always run before touching any code.**
+
 1. Read `docs/gotchas.md` — check if this bug matches a known gotcha
 2. Read `docs/debug-history.md` — check if a similar bug was fixed before
 3. Search instincts: `grep -r "domain: debugging" .claude/instincts/`
-4. If a match is found, apply the known fix and skip to Phase 6 (Verify)
+
+If a match is found, **still complete all phases** — but use the prior knowledge to accelerate. Prior matches can be wrong, outdated, or only partially applicable. Verify everything.
+
+```
+✅ GATE 0: Knowledge search complete
+  - Gotchas checked: [yes/no, any matches]
+  - Debug history checked: [yes/no, any matches]
+  - Instincts checked: [yes/no, any matches]
+```
+
+---
 
 ## Phase 1: Reproduce
 
-Consistently trigger the bug before attempting any fix.
+**MANDATORY — never attempt a fix without first reproducing the bug.**
 
 - Capture: error message, stack trace, environment, triggering input
 - Document exact reproduction steps (commands, URLs, user actions)
 - If intermittent: establish frequency and conditions (timing, load, data shape)
 - **Pre-hook runs automatically**: cleans caches (`.next/`, `dist/`, `__pycache__/`, `.cache/`) to ensure clean reproduction
+- **Actually run the reproduction** and observe the failure yourself
 
-**Output**: A reproducible trigger you can run on demand.
+```
+✅ GATE 1: Bug reproduced
+  - Reproduction command/steps: [what you ran]
+  - Observed error: [exact error or wrong behavior]
+  - Reproducible: [yes/intermittent/blocked — if blocked, STOP and ask user]
+```
+
+---
 
 ## Phase 2: Isolate
 
-Narrow the problem space.
+**MANDATORY — narrow before you fix.**
 
 - Use binary search debugging: comment out halves of suspect code to narrow the location
 - Use conditional breakpoints or targeted logging at suspect boundaries
 - Check recent changes: `git log --oneline -20` and `git diff HEAD~5` for related commits
 - Distinguish primary failure from cascading symptoms
 
-**Output**: The specific file(s) and function(s) where the bug lives.
+```
+✅ GATE 2: Bug isolated
+  - File(s): [paths]
+  - Function(s): [names]
+  - Narrowed to: [specific lines or logic block]
+```
+
+---
 
 ## Phase 3: Trace / Root Cause
 
-Work backward from where the problem manifests.
+**MANDATORY — understand WHY before you fix WHAT.**
 
 - Reconstruct context: request parameters, system state, execution timing
 - Apply **5 Whys**: ask "why" iteratively to drill past symptoms to root cause
@@ -52,19 +84,29 @@ Work backward from where the problem manifests.
   1. Add loggers around suspect code
   2. Run reproduction
   3. If root cause not visible, add more loggers and repeat
+- Do NOT proceed until you can state the root cause clearly
 
-**Output**: A clear root cause statement (not just "it was broken here" but *why*).
+```
+✅ GATE 3: Root cause identified
+  - Root cause: [clear statement of WHY, not just WHERE]
+  - 5 Whys chain: [the chain you followed]
+  - Confidence: [high/medium/low — if low, add more logging and repeat]
+```
+
+---
 
 ## Phase 3b: Spawn Parallel Test Writer
 
-**Immediately after identifying the root cause**, spawn the `debug-test-writer` agent in the background:
+**MANDATORY — spawn immediately after Gate 3 passes.**
+
+Spawn the `debug-test-writer` agent in the background:
 
 ```
 Agent(debug-test-writer, run_in_background=true):
   Symptom: <what the user observed>
-  Root cause: <why it happens>
-  Affected code: <file paths and function names>
-  Reproduction: <how to trigger the bug>
+  Root cause: <why it happens — from Gate 3>
+  Affected code: <file paths and function names — from Gate 2>
+  Reproduction: <how to trigger the bug — from Gate 1>
 ```
 
 The test writer works **in parallel** with Phases 4-5:
@@ -75,27 +117,52 @@ The test writer works **in parallel** with Phases 4-5:
 
 > This is parallel TDD: tests are written against the *bug*, not the fix. By the time the fix lands, the tests are ready.
 
+```
+✅ GATE 3b: Test writer spawned
+  - Agent launched: [yes — include agent ID]
+  - Context provided: [symptom, root cause, affected code, reproduction]
+```
+
+---
+
 ## Phase 4: Hypothesize
 
-Generate candidate fixes before writing code.
+**MANDATORY — think before you type.**
 
 - Propose 1-3 targeted fixes based on root cause
 - Evaluate each: correctness, side effects, regression risk
 - Prefer the **minimal change** that addresses root cause, not symptoms
 - AI suggestions are hypotheses — never auto-apply without verification
 
-**Output**: A chosen fix approach with rationale.
+```
+✅ GATE 4: Fix approach chosen
+  - Candidates considered: [list with brief pros/cons]
+  - Chosen approach: [which one and why]
+  - Risk assessment: [what could go wrong]
+```
+
+---
 
 ## Phase 5: Fix
 
-Apply the fix (while the test writer works in parallel).
+**MANDATORY — apply the chosen fix.**
 
 - Make the minimal change that addresses root cause
 - Follow existing code patterns and style
 - The parallel `debug-test-writer` agent is writing regression tests concurrently
 - **Immediately after fixing**: proceed to Phase 5b (Pattern Sweep)
 
+```
+✅ GATE 5: Fix applied
+  - Files changed: [list]
+  - Change summary: [what was changed and why]
+```
+
+---
+
 ### Phase 5b: Pattern Sweep (BUGSTONE)
+
+**MANDATORY — never fix just one instance.**
 
 After fixing the bug, sweep the codebase for siblings:
 
@@ -109,11 +176,20 @@ After fixing the bug, sweep the codebase for siblings:
 
 > A reviewer finding the same bug in a different file on the next round is a wasted cycle.
 
-**Output**: All sibling bugs fixed in the same pass.
+```
+✅ GATE 5b: Pattern sweep complete
+  - Pattern searched: [what you grepped for]
+  - Search terms used: [list]
+  - Hits found: [count]
+  - Siblings fixed: [count, or "none found"]
+  - Files affected: [list, or "none"]
+```
+
+---
 
 ## Phase 6: Verify (Fix Meets Tests)
 
-Confirm the fix works, the parallel tests pass, and nothing else broke.
+**MANDATORY — the fix is not done until tests prove it.**
 
 ### 6a. Collect Parallel Test Results
 - Wait for the `debug-test-writer` agent to complete (if not already done)
@@ -135,11 +211,20 @@ Confirm the fix works, the parallel tests pass, and nothing else broke.
 - Check for regressions in adjacent functionality
 - **Post-hook runs automatically**: reminds about pattern sweep and test verification
 
-**Output**: All tests green (including new regression tests), reproduction no longer triggers bug.
+```
+✅ GATE 6: Verification passed
+  - Regression tests: [count] written, all GREEN
+  - RED→GREEN confirmed: [yes/no]
+  - Full test suite: [pass/fail — if fail, STOP and investigate]
+  - Original reproduction: [no longer triggers bug: yes/no]
+  - Linter/type check: [pass/fail]
+```
+
+---
 
 ## Phase 7: Document
 
-Record what you learned for future debugging sessions.
+**MANDATORY — every fix must leave a trail.**
 
 ### 7a. Update Gotchas (if applicable)
 
@@ -158,7 +243,7 @@ If the bug was caused by counter-intuitive behavior (not just a typo), add to `d
 
 ### 7b. Update Debug History
 
-Append to `docs/debug-history.md`:
+**Always** append to `docs/debug-history.md`:
 
 ```markdown
 ### [Date] — [Short title]
@@ -183,15 +268,28 @@ created: "{{today}}"
 ---
 ```
 
+```
+✅ GATE 7: Documentation complete
+  - Gotcha added: [yes/no — if no, why not]
+  - Debug history updated: [yes — MANDATORY]
+  - Instinct created: [yes/no — if no, why not]
+```
+
+---
+
 ## Quick Reference
 
-| Phase | Goal | Key Technique |
-|-------|------|---------------|
-| 1. Reproduce | Reliable trigger | Clean env + exact steps |
-| 2. Isolate | Narrow location | Binary search / git bisect |
-| 3. Trace | Root cause | 5 Whys + iterative logging |
-| 3b. Test Writer | Parallel regression tests | `debug-test-writer` agent (background) |
-| 4. Hypothesize | Candidate fixes | Minimal change principle |
-| 5. Fix | Apply + sweep | BUGSTONE pattern sweep |
-| 6. Verify | Fix meets tests (RED→GREEN) | Parallel tests + full suite + repro |
-| 7. Document | Build knowledge | Gotchas + history + instincts |
+| Phase | Goal | Key Technique | Gate |
+|-------|------|---------------|------|
+| 0. Knowledge Search | Check prior fixes | gotchas + history + instincts | ✅ GATE 0 |
+| 1. Reproduce | Reliable trigger | Clean env + exact steps | ✅ GATE 1 |
+| 2. Isolate | Narrow location | Binary search / git bisect | ✅ GATE 2 |
+| 3. Trace | Root cause | 5 Whys + iterative logging | ✅ GATE 3 |
+| 3b. Test Writer | Parallel regression tests | `debug-test-writer` agent (background) | ✅ GATE 3b |
+| 4. Hypothesize | Candidate fixes | Minimal change principle | ✅ GATE 4 |
+| 5. Fix | Apply fix | Minimal change | ✅ GATE 5 |
+| 5b. Pattern Sweep | Find sibling bugs | BUGSTONE grep sweep | ✅ GATE 5b |
+| 6. Verify | Fix meets tests (RED→GREEN) | Parallel tests + full suite + repro | ✅ GATE 6 |
+| 7. Document | Build knowledge | Gotchas + history + instincts | ✅ GATE 7 |
+
+> **Completion rule**: The bugfix is NOT done until ALL gates are printed and passing. If any gate fails, resolve it before proceeding to the next phase.
