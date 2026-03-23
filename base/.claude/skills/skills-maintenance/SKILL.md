@@ -13,6 +13,18 @@ Update Claude Code skills in `.claude/skills/` based on what was learned or buil
 3. **Propose new skills if warranted** (present, don't auto-create)
 4. **Update `.claude/skills/INDEX.md`** if skills were added or modified
 
+## Skill Type Taxonomy
+
+| Type | Example | Complexity | Key Sections |
+|------|---------|-----------|--------------|
+| **Reference** | `frontend-patterns`, `coding-standards` | Light | Topics + code examples + tables |
+| **Checklist** | `commit-by-feature`, `verify-plan` | Medium | When to Use + Step-by-step + Rules |
+| **Session-aware** | `skills-maintenance`, `memory-curation` | Medium | Reviews session context + proposes changes |
+| **Process loop** | `iterative-retrieval` | Medium | Cycle diagram + stop conditions |
+| **Enforced workflow** | `debug-workflow` | Heavy | Task DAG + Router Contracts + CONTRACT RULEs + self-healing + memory layer |
+
+When creating a new skill, identify which archetype fits. For enforced workflows, use `create-cc10x-flow` as the template.
+
 ## Rules
 
 - Skills live in `.claude/skills/<skill-name>/SKILL.md`
