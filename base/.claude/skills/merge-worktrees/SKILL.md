@@ -36,6 +36,7 @@ TaskCreate: commit_gate_task    ← "CC10X MERGE: Commit Gate (HARD REQUIREMENT)
 TaskCreate: select_task         ← "CC10X MERGE: Select Worktree"
 TaskCreate: pre_merge_task      ← "CC10X MERGE: Pre-Merge Checks"
 TaskCreate: merge_task          ← "CC10X MERGE: Execute Merge"
+TaskCreate: restore_stash_task  ← "CC10X MERGE: Restore Stash"
 TaskCreate: verify_task         ← "CC10X MERGE: Post-Merge Verify"
 TaskCreate: diff_gate_task      ← "CC10X MERGE: Diff Review Gate (HARD REQUIREMENT)"
 TaskCreate: cleanup_task        ← "CC10X MERGE: Clean Up Worktree"
@@ -45,7 +46,8 @@ commit_gate_task   ← blocked by: [survey_task]
 select_task        ← blocked by: [commit_gate_task]
 pre_merge_task     ← blocked by: [select_task]
 merge_task         ← blocked by: [pre_merge_task]
-verify_task        ← blocked by: [merge_task]
+restore_stash_task ← blocked by: [merge_task]
+verify_task        ← blocked by: [restore_stash_task]
 diff_gate_task     ← blocked by: [verify_task]
 cleanup_task       ← blocked by: [diff_gate_task]
 ```
@@ -217,6 +219,7 @@ git merge --abort  # always abort the dry run
 PHASE: 3-pre-merge
 STATUS: READY|CONFLICTS_DETECTED|MAIN_DIRTY
 MAIN_CLEAN: true|false
+STASH_CREATED: true|false
 CONFLICT_FILES: ["<path1>", ...] or []
 DRY_RUN_PERFORMED: true|false
 ```
@@ -283,10 +286,55 @@ STATUS=MERGED but MERGE_COMMIT is empty
 
 ---
 
+## Phase 4.5: Restore Stash
+
+**Task**: `restore_stash_task`
+**Blocked by**: `[merge_task]`
+
+If Phase 3 stashed dirty main changes (`STASH_CREATED=true`), restore them now.
+
+```bash
+# Only if STASH_CREATED=true from Phase 3:
+git stash pop
+```
+
+If `git stash pop` fails (conflict with merged changes):
+→ AskUserQuestion: "Stash pop failed — the stashed changes conflict with the merge. How to proceed?"
+  Options: "Drop the stash (discard pre-merge changes)" | "Keep stash for manual resolution" | "Abort"
+→ "Drop the stash": `git stash drop`
+→ "Keep stash for manual resolution": warn user stash remains at `git stash list` index 0
+→ "Abort": STOP workflow.
+
+If `STASH_CREATED=false` → mark completed immediately, skip restore.
+
+### Router Contract (Phase 4.5)
+```yaml
+PHASE: 4.5-restore-stash
+STATUS: RESTORED|SKIPPED|CONFLICT
+STASH_CREATED: true|false
+STASH_POPPED: true|false|not_applicable
+STASH_DROPPED: true|false|not_applicable
+```
+
+### CONTRACT RULE
+```
+STATUS=RESTORED but STASH_POPPED ≠ true
+  → Override: STATUS=FAIL, BLOCKING=true,
+    REMEDIATION_REASON="Stash was created in Phase 3 but not restored. Must pop or explicitly drop."
+
+STASH_CREATED=true but STATUS=SKIPPED
+  → Override: STATUS=FAIL, BLOCKING=true,
+    REMEDIATION_REASON="Phase 3 created a stash but Phase 4.5 skipped restore. Stashed changes will be lost."
+```
+
+→ `TaskUpdate(restore_stash_task, status: "completed")`
+
+---
+
 ## Phase 5: Post-Merge Verify
 
 **Task**: `verify_task`
-**Blocked by**: `[merge_task]`
+**Blocked by**: `[restore_stash_task]`
 
 ```bash
 git log --oneline -5            # confirm merge commit
@@ -436,9 +484,10 @@ No exceptions — even if branch appears empty/merged.
 | 0 | Survey | — | WORKTREE_COUNT | No |
 | 1 | Commit Gate | Phase 0 | UNCOMMITTED_REMAINING=0, RECHECK=true | **YES** |
 | 2 | Select | Phase 1 | WORKTREE_NAME, BRANCH | No |
-| 3 | Pre-Merge | Phase 2 | MAIN_CLEAN, DRY_RUN | No |
+| 3 | Pre-Merge | Phase 2 | MAIN_CLEAN, DRY_RUN, STASH_CREATED | No |
 | 4 | Merge | Phase 3 | MERGE_COMMIT | No |
-| 5 | Verify | Phase 4 | MERGE_COMMIT_VISIBLE | Self-healing |
+| 4.5 | Restore Stash | Phase 4 | STASH_POPPED | No |
+| 5 | Verify | Phase 4.5 | MERGE_COMMIT_VISIBLE | Self-healing |
 | 6 | Diff Gate | Phase 5 | DIFF_DISPLAYED, USER_CONFIRMED | **YES** |
 | 7 | Cleanup | Phase 6 | WORKTREE_REMOVED | No |
 
