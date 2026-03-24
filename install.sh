@@ -87,6 +87,12 @@ install_managed() {
       cp "$dst" "${dst}.bak"
       copy_with_sub "$src" "$dst"
       ((UPDATED++)) || true
+    elif [[ "$FORCE" == true ]]; then
+      # Force mode: take over unmanaged file — back up and overwrite
+      cp "$dst" "${dst}.bak"
+      copy_with_sub "$src" "$dst"
+      log_warn "Took over local file: $dst (backup at ${dst}.bak)"
+      ((UPDATED++)) || true
     else
       # Project-local — skip
       ((SKIPPED++)) || true
