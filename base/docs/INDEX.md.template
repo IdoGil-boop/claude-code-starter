@@ -7,6 +7,7 @@ All project documentation lives under `docs/`. This index must stay accurate.
 <!-- Example: - **[System Architecture](architecture/SYSTEM_ARCHITECTURE.md)** — High-level system overview -->
 
 ## Reference
+- **[Prompting Guidelines](reference/PROMPTING_GUIDELINES.md)** — LLM prompting best practices (system prompt structure, few-shot, CoT, grounding, judge design)
 - **[Common Gotchas](reference/COMMON_GOTCHAS.md)** — Known pitfalls and workarounds
 
 ## Guides

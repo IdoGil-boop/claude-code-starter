@@ -29,6 +29,9 @@ This file is the **entry point** for Claude agents. It provides essential contex
 ### Architecture & Design
 - **[Architecture](docs/architecture/)** — System design docs
 
+### Prompting
+- **[Prompting Guidelines](docs/reference/PROMPTING_GUIDELINES.md)** — System prompt structure, few-shot, CoT, grounding, judge design
+
 ### Gotchas & Patterns
 - **[Common Gotchas](docs/reference/COMMON_GOTCHAS.md)** — Known pitfalls and workarounds
 
