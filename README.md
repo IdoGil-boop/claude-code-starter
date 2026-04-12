@@ -104,13 +104,14 @@ CLAUDE.md (≤120 lines)         ← Index + overview. Never inline details.
   └── docs/plans/*.md           ← Implementation plans
 ```
 
-## Upstream Sync — Push Learnings Back
+## Maintaining This Kit
 
-When you discover a universal gotcha or improve a rule/skill/agent in a project, push it back to the starter so all projects benefit:
-
-The `upstream-sync` skill guides Claude through this — it edits files in `.claude-starter/`, commits, and pushes to origin. Then re-syncs the local project.
-
-Only universal learnings go upstream. Project-specific content stays in `-local` files.
+See [MAINTENANCE.md](MAINTENANCE.md) for:
+- Adding new skills, agents, rules, commands
+- `base/` vs `packs/` decision
+- Template placeholders (`{{TEST_CMD}}` etc.)
+- Testing changes locally before pushing upstream
+- First-run template pattern for project-specific skills
 
 ## Updating
 
@@ -120,3 +121,5 @@ cd .claude-starter && git pull && cd ..
 ```
 
 Managed files are updated. Local files are untouched. Templates are never overwritten.
+
+Push improvements back upstream with the `/upstream-sync` skill — it copies local changes to `.claude-starter/`, commits, and pushes. Only universal learnings go upstream; project-specific content stays in `-local` files.
